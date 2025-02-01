@@ -48,23 +48,31 @@ jobs:
         echo $VIRTUAL_ENV
         pip install -r requirements.txt
 
+    - name: Set report file names
+      id: json
+      run: |
+        echo "syntax=report_syntax.json" >> $GITHUB_OUTPUT
+        echo "style=report_style.json" >> $GITHUB_OUTPUT
+        echo "results=report_results.json" >> $GITHUB_OUTPUT
+        echo "comparison=report_comparison.json" >> $GITHUB_OUTPUT
+
     - name: check syntax
       id: check-syntax
       uses: classroom-resources/autograding-command-grader@v1
       with:
         test-name: check syntax
         setup-command: ". test-env/bin/activate && echo $VIRTUAL_ENV && python -m pip list"
-        command: ". test-env/bin/activate && python -m pytest tests/test_syntax.py"
+        command: ". test-env/bin/activate && python -m pytest --json-report --json-report-indent=4 --json-report-file=${{ steps.json.outputs.syntax }} tests/test_syntax.py"
         timeout: 1
         max-score: 1
 
-    - name: all lines in the function
-      id: all-lines-in-the-function
+    - name: check style
+      id: check-style
       uses: classroom-resources/autograding-command-grader@v1
       with:
-        test-name: all lines in the function
+        test-name: style
         setup-command: ". test-env/bin/activate && echo $VIRTUAL_ENV && python -m pip list"
-        command: ". test-env/bin/activate && python -m pytest tests/test_all_lines_in_the_function.py"
+        command: ". test-env/bin/activate && python -m pytest tests/test_style.py"
         timeout: 1
         max-score: 1
 
@@ -74,7 +82,7 @@ jobs:
       with:
         test-name: test result
         setup-command: ". test-env/bin/activate && echo $VIRTUAL_ENV && python -m pip list"
-        command: ". test-env/bin/activate && python -m pytest -n auto tests/test_results.py"
+        command: ". test-env/bin/activate && python -m pytest -n auto --json-report --json-report-indent=4 --json-report-file=${{ steps.json.outputs.results }} tests/test_results.py"
         timeout: 2
         max-score: 2
 
@@ -84,7 +92,7 @@ jobs:
       with:
         test-name: test comparison
         setup-command: ". test-env/bin/activate && echo $VIRTUAL_ENV && python -m pip list"
-        command: ". test-env/bin/activate && python -m pytest -n auto tests/test_comparison.py"
+        command: ". test-env/bin/activate && python -m pytest -n auto --json-report --json-report-indent=4 --json-report-file=${{ steps.json.outputs.comparison }} tests/test_comparison.py"
         timeout: 2
         max-score: 1
 
@@ -92,11 +100,11 @@ jobs:
       uses: classroom-resources/autograding-grading-reporter@v1
       env:
         CHECK-SYNTAX_RESULTS: "${{steps.check-syntax.outputs.result}}"
-        ALL-LINES-IN-THE-FUNCTION_RESULTS: "${{steps.all-lines-in-the-function.outputs.result}}"
+        CHECK-STYLE_RESULTS: "${{steps.check-style.outputs.result}}"
         TEST-COMPARISON_RESULTS: "${{steps.test-comparison.outputs.result}}"
         TEST-RESULT_RESULTS: "${{steps.test-result.outputs.result}}"
       with:
-        runners: check-syntax,all-lines-in-the-function,test-result,test-comparison
+        runners: check-syntax,check-style,test-result,test-comparison
 
     - name: upload pngs as artifacts
       id: png-artifacts
