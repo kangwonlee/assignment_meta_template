@@ -1,4 +1,4 @@
-import my_code_here as mch
+import exercise
 
 
 def sample_main():
